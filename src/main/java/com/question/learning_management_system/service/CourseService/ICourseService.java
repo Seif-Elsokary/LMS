@@ -25,5 +25,17 @@ public interface ICourseService {
 
     List<CourseDto> getCoursesByInstructor(Long instructorId);
 
-    List<CourseDto> searchCoursesByMergedName(String mergedInput); // ⭐ إضافة جديدة للبحث الذكي
+    List<CourseDto> searchCoursesByMergedName(String mergedInput);
+
+    List<CourseDto> getCoursesSortedByAverageRate();
+
+    CourseDto getHighestRatedCourseByCategory(Long categoryId);
+
+    CourseDto getHighestRatedCourseByCategoryAndInstructorName(Long categoryId, String instructorName);
+
+    List<CourseDto> getHighestRatedCourseByCategoryAndInstructorName(String categoryName, String instructorName);
+
+    List<CourseDto> getCoursesByCategoryName(String categoryName);
+
+    CourseDto getHighestRatedCourseByCategoryName(String categoryName);
 }

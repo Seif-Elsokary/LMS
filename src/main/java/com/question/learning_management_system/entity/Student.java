@@ -1,10 +1,15 @@
 package com.question.learning_management_system.entity;
 
+import com.question.learning_management_system.enums.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -20,8 +25,10 @@ public class Student {
 
     private String name;
     private int age;
-
     private String gender;
+
+    @Lob
+    private String bio;
 
     @Email
     @Column(unique = true)
@@ -30,19 +37,26 @@ public class Student {
     @Column(unique = true)
     private String phoneNumber;
 
-    @ManyToMany
-    @JoinTable(
-            name = "student_quizzes",
-            joinColumns = @JoinColumn(name = "student_id"),
-            inverseJoinColumns = @JoinColumn(name = "quiz_id")
-    )
-    private List<Quiz> quizzes;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    @ManyToMany(mappedBy = "students")
-    private List<Course> courses;
+    private String password;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Review> reviews;
+    @Builder.Default
+    private Set<Review> reviews = new HashSet<>();
 
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Comment> comments = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
 }
+
+

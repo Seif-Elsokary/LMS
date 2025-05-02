@@ -10,4 +10,6 @@ public class UpdateInstructorRequest {
     private String email;
     private String phoneNumber;
     private String bio;
+    private int age;
+    private String password;
 }

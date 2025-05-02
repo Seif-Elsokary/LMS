@@ -6,6 +6,7 @@ import com.question.learning_management_system.request.ReviewRequest.UpdateRevie
 import com.question.learning_management_system.service.ReviewService.IReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,8 +47,6 @@ public class ReviewController {
     public ResponseEntity<ReviewDto> createReview(@RequestBody CreateReviewRequest request) {
         return ResponseEntity.ok(reviewService.createReview(request));
     }
-
-
 
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewDto> updateReview(@RequestBody UpdateReviewRequest request, @PathVariable Long reviewId) {

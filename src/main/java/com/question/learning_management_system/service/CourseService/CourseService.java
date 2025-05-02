@@ -13,6 +13,7 @@ import com.question.learning_management_system.request.CourseRequest.CreateCours
 import com.question.learning_management_system.request.CourseRequest.UpdateCourseRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeMap;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -127,11 +128,41 @@ public class CourseService implements ICourseService {
         return convertToCourseDtoList(instructorsCourses);
     }
 
+    @Override
+    public List<CourseDto> getCoursesSortedByAverageRate() {
+        List<Course> sortCoursesByRate = courseRepository.findAllCoursesSortedByAverageRate();
+        return convertToCourseDtoList(sortCoursesByRate);
+    }
+
+    @Override
+    public CourseDto getHighestRatedCourseByCategory(Long categoryId) {
+        return convertToCourseDto(courseRepository.findCourseWithTopRatedByCategoryId(categoryId));
+    }
+
+    @Override
+    public CourseDto getHighestRatedCourseByCategoryAndInstructorName(Long categoryId, String instructorName) {
+        return convertToCourseDto(courseRepository.findTopCourseByCategoryAndInstructorNameIgnoreCase(categoryId , instructorName));
+    }
+
+    @Override
+    public List<CourseDto> getHighestRatedCourseByCategoryAndInstructorName(String categoryName, String instructorName) {
+        return convertToCourseDtoList(courseRepository.findTopCourseByCategoryNameAndInstructorNameIgnoreCase(categoryName , instructorName));
+    }
+
+    @Override
+    public List<CourseDto> getCoursesByCategoryName(String categoryName) {
+        return convertToCourseDtoList(courseRepository.findByCategoryNameIgnoreCase(categoryName));
+    }
+
+    @Override
+    public CourseDto getHighestRatedCourseByCategoryName(String categoryName) {
+        return convertToCourseDto(courseRepository.findCourseWithTopRatedByCategoryNameIgnoreCase(categoryName));
+    }
+
     private CourseDto convertToCourseDto(Course course) {
-        modelMapper.typeMap(Course.class, CourseDto.class)
-                .addMappings(mapper -> mapper.map(src -> src.getCategory().getName(), CourseDto::setCategoryName)); // تخصيص الإعدادات هنا
         return modelMapper.map(course, CourseDto.class);
     }
+
 
     private List<CourseDto> convertToCourseDtoList(List<Course> courseList) {
         return courseList.stream()

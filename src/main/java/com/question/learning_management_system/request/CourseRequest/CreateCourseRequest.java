@@ -13,4 +13,6 @@ public class CreateCourseRequest {
     private String courseUrl;
     private Long instructorId;
     private String categoryName;
+
+
 }

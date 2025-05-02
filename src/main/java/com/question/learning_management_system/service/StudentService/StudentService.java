@@ -1,17 +1,17 @@
 package com.question.learning_management_system.service.StudentService;
 
 import com.question.learning_management_system.dto.StudentDto;
-import com.question.learning_management_system.entity.Course;
 import com.question.learning_management_system.entity.Student;
-import com.question.learning_management_system.exception.AlreadyExistsException;
-import com.question.learning_management_system.exception.CourseNotFoundException;
+import com.question.learning_management_system.enums.Role;
 import com.question.learning_management_system.exception.StudentNotFoundException;
 import com.question.learning_management_system.repository.CourseRepository;
 import com.question.learning_management_system.repository.StudentRepository;
 import com.question.learning_management_system.request.StudentRequest.CreateStudentRequest;
 import com.question.learning_management_system.request.StudentRequest.UpdateStudentRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +24,7 @@ public class StudentService implements IStudentService {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public StudentDto getStudentById(Long id) {
@@ -74,30 +75,20 @@ public class StudentService implements IStudentService {
         return convertToStudentDtoList(studentRepository.findAll());
     }
 
+    @Transactional
     @Override
     public StudentDto addStudent(CreateStudentRequest request) {
-        validateGender(request.getGender());
 
-        if (isExistsByEmail(request.getEmail())) {
-            throw new AlreadyExistsException("Student with email " + request.getEmail() + " already exists.");
-        }
-        if (isExistsByPhoneNumber(request.getPhoneNumber())) {
-            throw new AlreadyExistsException("Student with phone number " + request.getPhoneNumber() + " already exists.");
-        }
-
+        // تعيين الدور "USER" للطالب عند التسجيل
         Student newStudent = Student.builder()
                 .name(request.getName())
-                .age(request.getAge())
-                .gender(request.getGender().toUpperCase())
                 .email(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .age(request.getAge())
+                .gender(request.getGender())
+                .role(Role.USER)  // إضافة الدور كـ "USER"
                 .build();
-
-        if (request.getCourseId() != null) {
-            Course course = findCourseById(request.getCourseId());
-            newStudent.getCourses().add(course);
-            course.getStudents().add(newStudent);
-        }
 
         return convertToStudentDto(studentRepository.save(newStudent));
     }
@@ -112,20 +103,9 @@ public class StudentService implements IStudentService {
         existingStudent.setGender(request.getGender().toUpperCase());
         existingStudent.setEmail(request.getEmail());
         existingStudent.setPhoneNumber(request.getPhoneNumber());
+        existingStudent.setPassword(passwordEncoder.encode(request.getPassword()));
 
         return convertToStudentDto(studentRepository.save(existingStudent));
-    }
-
-    @Override
-    public void assignCourseToStudent(Long studentId, Long courseId) {
-        Student student = findStudentById(studentId);
-        Course course = findCourseById(courseId);
-
-        student.getCourses().add(course);
-        course.getStudents().add(student);
-
-        studentRepository.save(student);
-        courseRepository.save(course);
     }
 
     @Override
@@ -154,20 +134,14 @@ public class StudentService implements IStudentService {
         return studentRepository.existsByPhoneNumber(phoneNumber);
     }
 
+    @Override
+    public boolean isExistsById(Long id) {
+        return studentRepository.existsById(id);
+    }
+
     private Student findStudentById(Long id) {
         return studentRepository.findById(id)
                 .orElseThrow(() -> new StudentNotFoundException("Student with id " + id + " not found"));
-    }
-
-    private Course findCourseById(Long id) {
-        return courseRepository.findById(id)
-                .orElseThrow(() -> new CourseNotFoundException("Course with id " + id + " not found"));
-    }
-
-    private void validateGender(String gender) {
-        if (!gender.equalsIgnoreCase("male") && !gender.equalsIgnoreCase("female")) {
-            throw new IllegalArgumentException("Gender must be MALE or FEMALE");
-        }
     }
 
     private StudentDto convertToStudentDto(Student student) {
@@ -175,6 +149,14 @@ public class StudentService implements IStudentService {
     }
 
     private List<StudentDto> convertToStudentDtoList(List<Student> students) {
-        return students.stream().map(this::convertToStudentDto).collect(Collectors.toList());
+        return students.stream()
+                .map(this::convertToStudentDto)
+                .collect(Collectors.toList());
+    }
+
+    private void validateGender(String gender) {
+        if (!gender.equalsIgnoreCase("MALE") && !gender.equalsIgnoreCase("FEMALE")) {
+            throw new IllegalArgumentException("Invalid gender: " + gender);
+        }
     }
 }

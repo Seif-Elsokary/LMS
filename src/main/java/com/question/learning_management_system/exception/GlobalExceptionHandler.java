@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<String> handleCategoryNotFound(CategoryNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
     @ExceptionHandler(StudentNotFoundException.class)
     public ResponseEntity<ApiResponse<String>> handleStudentNotFoundException(StudentNotFoundException ex) {
         ApiResponse<String> response = new ApiResponse<>(false, null, ex.getMessage());
@@ -55,4 +60,6 @@ public class GlobalExceptionHandler {
         ApiResponse<String> response = new ApiResponse<>(false, null, ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+
+
 }

@@ -1,5 +1,6 @@
 package com.question.learning_management_system.service.ReviewService;
 
+import com.question.learning_management_system.dto.MailDetailsDto;
 import com.question.learning_management_system.dto.ReviewDto;
 import com.question.learning_management_system.entity.Course;
 import com.question.learning_management_system.entity.Instructor;
@@ -12,6 +13,7 @@ import com.question.learning_management_system.repository.ReviewRepository;
 import com.question.learning_management_system.repository.StudentRepository;
 import com.question.learning_management_system.request.ReviewRequest.CreateReviewRequest;
 import com.question.learning_management_system.request.ReviewRequest.UpdateReviewRequest;
+import com.question.learning_management_system.service.EmailService.IMailService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -26,18 +28,17 @@ import java.util.stream.Collectors;
 @Service
 public class ReviewService implements IReviewService {
 
-    @Override
-    public List<ReviewDto> getAllCommentByCourseId(Long courseId) {
-        List<Review> reviews = reviewRepository.findByCourseId(courseId);
-
-        return convertToDtoList(reviews);
-    }
-
-
     private final ReviewRepository reviewRepository;
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
+    private final IMailService mailService;
     private final ModelMapper modelMapper;
+
+    @Override
+    public List<ReviewDto> getAllCommentByCourseId(Long courseId) {
+        List<Review> reviews = reviewRepository.findByCourseId(courseId);
+        return convertToDtoList(reviews);
+    }
 
     @Override
     public ReviewDto createReview(CreateReviewRequest request) {
@@ -46,9 +47,7 @@ public class ReviewService implements IReviewService {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new StudentNotFoundException("Student not found with id: " + request.getStudentId()));
 
-        if (!student.getCourses().contains(course)) {
-            throw new IllegalArgumentException("Student is not enrolled in this course and cannot leave a review.");
-        }
+
 
         Review review = Review.builder()
                 .comment(request.getComment())
@@ -58,6 +57,8 @@ public class ReviewService implements IReviewService {
                 .build();
 
         Review savedReview = reviewRepository.save(review);
+
+        sendNewReviewEmailToInstructor(student, course, request.getComment());
 
         updateInstructorRating(course);
 
@@ -148,6 +149,25 @@ public class ReviewService implements IReviewService {
     }
 
     // ========================== HELPER METHODS ==========================
+
+
+
+    private void sendNewReviewEmailToInstructor(Student student, Course course, String review) {
+        MailDetailsDto mailDetailsDto = new MailDetailsDto();
+        mailDetailsDto.setToMail(course.getInstructor().getEmail());
+        mailDetailsDto.setSubject("🌟 New Review on Your Course");
+        mailDetailsDto.setMessage(
+                "<h2>New Review Alert!</h2>" +
+                        "<p>Dear " + course.getInstructor().getName() + ",</p>" +
+                        "<p>Student <strong>" + student.getName() + "</strong> has posted a new review for your course <strong>" + course.getTitle() + "</strong>.</p>" +
+                        "<p><strong>Review:</strong></p>" +
+                        "<p>" + review + "</p>" +
+                        "<br><p>Feel free to respond to the student if needed.</p>"
+        );
+        mailDetailsDto.setContentType("html");
+
+        mailService.sendMail(mailDetailsDto);
+    }
 
     private void updateInstructorRating(Course course) {
         Instructor instructor = course.getInstructor();

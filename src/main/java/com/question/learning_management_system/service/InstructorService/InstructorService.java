@@ -1,15 +1,19 @@
 package com.question.learning_management_system.service.InstructorService;
 
 import com.question.learning_management_system.dto.InstructorDto;
+import com.question.learning_management_system.entity.Course;
 import com.question.learning_management_system.entity.Instructor;
+import com.question.learning_management_system.enums.Role;
 import com.question.learning_management_system.exception.AlreadyExistsException;
 import com.question.learning_management_system.exception.InstructorNotFoundException;
+import com.question.learning_management_system.repository.CourseRepository;
 import com.question.learning_management_system.repository.InstructorRepository;
-import com.question.learning_management_system.request.InstructorRequest.CreatInstructorRequest;
+import com.question.learning_management_system.request.InstructorRequest.CreateInstructorRequest;
 import com.question.learning_management_system.request.InstructorRequest.UpdateInstructorRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +24,9 @@ import java.util.List;
 public class InstructorService implements IInstructorService {
 
     private final InstructorRepository instructorRepository;
+    private final CourseRepository courseRepository;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public InstructorDto findById(Long id) {
@@ -38,7 +44,7 @@ public class InstructorService implements IInstructorService {
     }
 
     @Override
-    public InstructorDto addInstructor(CreatInstructorRequest request) {
+    public InstructorDto addInstructor(CreateInstructorRequest request) {
         validateInstructorUniqueness(request.getEmail(), request.getPhoneNumber());
 
         Instructor newInstructor = buildInstructorFromRequest(request);
@@ -53,7 +59,7 @@ public class InstructorService implements IInstructorService {
         Instructor existingInstructor = instructorRepository.findById(id)
                 .orElseThrow(() -> new InstructorNotFoundException("Instructor with id: " + id + " not found!"));
 
-        if (!existingInstructor.getEmail().equals(request.getEmail()) && existsByEmail(request.getEmail())) {
+        if (!existingInstructor.getEmail().equalsIgnoreCase(request.getEmail()) && existsByEmail(request.getEmail())) {
             throw new AlreadyExistsException("Email already exists for another instructor.");
         }
 
@@ -108,6 +114,31 @@ public class InstructorService implements IInstructorService {
         return instructorRepository.existsById(id);
     }
 
+    @Override
+    public InstructorDto calculateInstructorRating(Long instructorId) {
+        Instructor instructor = instructorRepository.findById(instructorId)
+                .orElseThrow(() -> new InstructorNotFoundException("Instructor with id: " + instructorId + " not found!"));
+
+        List<Course> courses = courseRepository.findByInstructorId(instructorId);
+
+        if (courses.isEmpty()) {
+            instructor.setRating(0.0);
+        } else {
+            double averageRating = courses.stream()
+                    .filter(course -> course.getAverageRate() != null)
+                    .mapToDouble(Course::getAverageRate)
+                    .average()
+                    .orElse(0.0);
+
+            instructor.setRating(averageRating);
+        }
+
+        instructorRepository.save(instructor);
+
+        log.info("Instructor with ID {} rating calculated and updated successfully.", instructorId);
+        return convertToDto(instructor);
+    }
+
     // -------------------- Private Helper Methods --------------------
 
     private void validateInstructorUniqueness(String email, String phone) {
@@ -119,12 +150,17 @@ public class InstructorService implements IInstructorService {
         }
     }
 
-    private Instructor buildInstructorFromRequest(CreatInstructorRequest request) {
+    private Instructor buildInstructorFromRequest(CreateInstructorRequest request) {
         return Instructor.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .bio(request.getBio())
                 .phoneNumber(request.getPhoneNumber())
+                .rating(0.0)
+                .age(request.getAge())
+                .gender(request.getGender())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ADMIN)
                 .build();
     }
 
@@ -133,6 +169,9 @@ public class InstructorService implements IInstructorService {
         instructor.setEmail(request.getEmail());
         instructor.setBio(request.getBio());
         instructor.setPhoneNumber(request.getPhoneNumber());
+        instructor.setAge(request.getAge());
+        instructor.setPassword(passwordEncoder.encode(request.getPassword()));
+
     }
 
     private InstructorDto convertToDto(Instructor instructor) {

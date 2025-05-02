@@ -13,10 +13,10 @@ public class InstructorDto {
     private Long id;
     private String name;
     private String email;
-    private String bio;
     private String phoneNumber;
     private Double rating;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<CourseDto> courses;
+    private List<CourseDto> comments;
 }

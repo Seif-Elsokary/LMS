@@ -1,11 +1,12 @@
 package com.question.learning_management_system.request.StudentRequest;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 @Builder
 @Data
 public class CreateStudentRequest {
@@ -15,6 +16,6 @@ public class CreateStudentRequest {
     private String gender;
     private String email;
     private String phoneNumber;
-    private Long courseId;
-
+    private String password;
+    private String role;
 }

@@ -16,4 +16,5 @@ public class UpdateStudentRequest {
     private String gender;
     private String email;
     private String phoneNumber;
+    private String password;
 }

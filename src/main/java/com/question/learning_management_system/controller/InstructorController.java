@@ -1,13 +1,12 @@
 package com.question.learning_management_system.controller;
 
 import com.question.learning_management_system.dto.InstructorDto;
-
-import com.question.learning_management_system.request.InstructorRequest.CreatInstructorRequest;
+import com.question.learning_management_system.request.InstructorRequest.CreateInstructorRequest;
 import com.question.learning_management_system.request.InstructorRequest.UpdateInstructorRequest;
 import com.question.learning_management_system.service.InstructorService.IInstructorService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,46 +18,71 @@ public class InstructorController {
 
     private final IInstructorService instructorService;
 
-    @PostMapping
-    public ResponseEntity<InstructorDto> addInstructor(@RequestBody CreatInstructorRequest request) {
-        InstructorDto instructorDto = instructorService.addInstructor(request);
-        return ResponseEntity.status(201).body(instructorDto);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<InstructorDto> updateInstructor(@PathVariable Long id, @RequestBody UpdateInstructorRequest request) {
-        InstructorDto instructorDto = instructorService.updateInstructor(request, id);
-        return ResponseEntity.ok(instructorDto);
+    @GetMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
+    public ResponseEntity<List<InstructorDto>> getAllInstructors() {
+        return ResponseEntity.ok(instructorService.getAllInstructors());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
     public ResponseEntity<InstructorDto> getInstructorById(@PathVariable Long id) {
-        InstructorDto instructorDto = instructorService.findById(id);
-        return ResponseEntity.ok(instructorDto);
+        return ResponseEntity.ok(instructorService.findById(id));
     }
 
     @GetMapping("/email/{email}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<InstructorDto> getInstructorByEmail(@PathVariable String email) {
-        InstructorDto instructorDto = instructorService.getInstructorByEmail(email);
-        return ResponseEntity.ok(instructorDto);
+        return ResponseEntity.ok(instructorService.getInstructorByEmail(email));
     }
 
-    @GetMapping
-    public ResponseEntity<List<InstructorDto>> getAllInstructors() {
-        List<InstructorDto> instructorDtos = instructorService.getAllInstructors();
-        return ResponseEntity.ok(instructorDtos);
+    @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<InstructorDto> addInstructor(@RequestBody CreateInstructorRequest request) {
+        return ResponseEntity.ok(instructorService.addInstructor(request));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<InstructorDto> updateInstructor(@RequestBody UpdateInstructorRequest request, @PathVariable Long id) {
+        return ResponseEntity.ok(instructorService.updateInstructor(request, id));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteInstructor(@PathVariable Long id) {
         instructorService.deleteInstructor(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/email/{email}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteInstructorByEmail(@PathVariable String email) {
         instructorService.deleteInstructorByEmail(email);
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/exists/email/{email}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Boolean> existsByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(instructorService.existsByEmail(email));
+    }
+
+    @GetMapping("/exists/phone/{phoneNumber}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Boolean> existsByPhone(@PathVariable String phoneNumber) {
+        return ResponseEntity.ok(instructorService.existsByPhone(phoneNumber));
+    }
+
+    @GetMapping("/exists/id/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Boolean> existsById(@PathVariable Long id) {
+        return ResponseEntity.ok(instructorService.existsById(id));
+    }
+
+    @GetMapping("/rating/{instructorId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
+    public ResponseEntity<InstructorDto> calculateInstructorRating(@PathVariable Long instructorId) {
+        return ResponseEntity.ok(instructorService.calculateInstructorRating(instructorId));
+    }
 }

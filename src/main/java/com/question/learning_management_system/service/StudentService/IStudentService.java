@@ -17,10 +17,11 @@ public interface IStudentService {
     List<StudentDto> getAllStudents();
     StudentDto addStudent(CreateStudentRequest request);
     StudentDto updateStudent(UpdateStudentRequest request, Long id);
-    void assignCourseToStudent(Long studentId, Long courseId);
     void deleteStudentById(Long id);
     void deleteStudentByPhoneNumber(String phoneNumber);
     boolean isExistsByEmail(String email);
     boolean isExistsByPhoneNumber(String phoneNumber);
+
+    boolean isExistsById(Long id);
 }
 
